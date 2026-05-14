@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang='pt-BR'>
+<head>
+    <meta charset='UTF-8' />
+    <title>Pokedex</title>
+    <link rel='stylesheet' href='/style.css' />
+</head>
+<body>
+    <h1>Pokedex</h1>
+    <p class='subtitulo'>Digite o nome de um Pokemon para pesquisar</p>
+
+    <div class='busca'>
+        <input type='text' id='inputPokemon' 
+            placeholder='Ex: pikachu, bulbasaur...' 
+            onkeydown="if(event.key==='Enter') buscar()" />
+        <button onclick='buscar()'>Buscar</button>
+    </div>
+
+    <div id='resultado'></div>
+
+    <script>
+        async function buscar() {
+            const nome = document.getElementById('inputPokemon').value.trim();
+            const div = document.getElementById('resultado');
+
+            if (!nome) {
+                div.innerHTML = '<div class="erro">Digite o nome!</div>';
+                return;
+            }
+
+            div.innerHTML = '<div class="carregando">Buscando...</div>';
+
+            try {
+                // Faz requisição para o servidor Express
+                const resposta = await fetch(`/api/pokemon/${nome}`);
+                const dados = await resposta.json();
+
+                if (!resposta.ok) {
+                    div.innerHTML = `<div class="erro">${dados.erro}</div>`;
+                    return;
+                }
+
+                const tiposHTML = dados.tipos
+                    .map((t) => `<span class="tipo ${t}">${t}</span>`)
+                    .join('');
+
+                div.innerHTML = `
+                    <div class='card'>
+                        <img src='${dados.imagem}' alt='${dados.nome}' />
+                        <h2>${dados.nome}</h2>
+                        <p class='numero'>#${String(dados.id).padStart(3, '0')}</p>
+                        <div class='tipos'>${tiposHTML}</div>
+                        
+                        <div class='info-grid'>
+                            <div class='info-item'>
+                                <div class='label'>Altura</div>
+                                <div class='value'>${dados.altura}</div>
+                            </div>
+                            <div class='info-item'>
+                                <div class='label'>Peso</div>
+                            <div class='value'>${dados.peso}</div>
+                        </div>
+                    </div>
+                    <div class='habilidades'>
+                        <strong>Habilidades:</strong>
+                            ${dados.habilidades.join(', ')}
+                        </div>
+                    </div>`;
+
+            } catch (e) {
+                div.innerHTML = '<div class="erro">Erro ao conectar com o servidor.</div>';
+            }
+        }
+    </script>
+</body>
+</html>
